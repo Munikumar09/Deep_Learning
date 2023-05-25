@@ -6,75 +6,76 @@ import torch.nn as nn
 from utils.helper import get_model_class,get_optim_class,get_lr_scheduler,save_config,save_vocab
 from utils.trainer import Trainer
 from utils.dataloader import get_dataloader_and_vocab
+import hydra
+from hydra.core.config_store import ConfigStore
+from config import WordToVec
 
-def train(config):
-    if not os.path.exists(config["model_dir"]):
-        os.makedirs(config["model_dir"])
+cs= ConfigStore.instance()
+cs.store(name="word_to_vec", node=WordToVec)
+
+@hydra.main(config_path=".",config_name="config.yaml",version_base=None)
+def train(cfg:WordToVec):
+    if not os.path.exists(cfg.paths.model_dir):
+        os.makedirs(cfg.paths.model_dir)
     
     train_dataloader,vocab=get_dataloader_and_vocab(
-        model_name=config["model_name"],
-        dataset_name=config["dataset"],
+        model_name=cfg.params.model_name,
+        dataset_name=cfg.params.dataset,
         split_type="train",
-        data_dir=config['data_dir'],
-        batch_size=config["train_batch_size"],
-        shuffle=config["shuffle"],
+        data_dir=cfg.paths.data_dir,
+        batch_size=cfg.params.train_batch_size,
+        shuffle=cfg.params.shuffle,
         vocab=None
     )
     
     val_dataloader,_=get_dataloader_and_vocab(
-        model_name=config["model_name"],
-        dataset_name=config["dataset"],
+        model_name=cfg.params.model_name,
+        dataset_name=cfg.params.dataset,
         split_type="valid",
-        data_dir=config["data_dir"],
-        batch_size=config["val_batch_size"],
+        data_dir=cfg.paths.data_dir,
+        batch_size=cfg.params.val_batch_size,
         shuffle=False,
         vocab=vocab
     )
     
     vocab_size=len(vocab)
     
-    model_class=get_model_class(config["model_name"])
+    model_class=get_model_class(cfg.params.model_name)
     
     model=model_class(vocab_size=vocab_size)
     
     criterion=nn.CrossEntropyLoss()
     
-    optimizer_class=get_optim_class(config["optimizer"])
-    optimizer=optimizer_class(model.parameters(),config["learning_rate"])
+    optimizer_class=get_optim_class(cfg.params.optimizer)
+    optimizer=optimizer_class(model.parameters(),cfg.params.learning_rate)
     
-    lr_schedular=get_lr_scheduler(optimizer=optimizer,total_epochs=config["epochs"])
+    lr_schedular=get_lr_scheduler(optimizer=optimizer,total_epochs=cfg.params.epochs)
     
     device="cuda" if torch.cuda.is_available() else "cpu"
     
     trainer=Trainer(
         model=model,
-        epochs=config["epochs"],
+        epochs=cfg.params.epochs,
         train_dataloader=train_dataloader,
-        train_steps=config["train_steps"],
+        train_steps=cfg.params.train_steps,
         val_dataloader=val_dataloader,
-        val_steps=config["val_steps"],
-        checkpoint_frequency=config["checkpoint_frequency"],
+        val_steps=cfg.params.val_steps,
+        checkpoint_frequency=cfg.params.checkpoint_frequency,
         criterion=criterion,
         device=device,
         optimizer=optimizer,
         lr_schedular=lr_schedular,
-        model_dir=config["model_dir"]
+        model_dir=cfg.paths.model_dir
     )
     print('Training started...')
     trainer.train()
     print("Training finished.")
     trainer.save_model()
     trainer.save_loss()
-    save_config(config=config,model_dir=config["model_dir"])
-    save_vocab(vocab=vocab,model_dir=config["model_dir"])
+    save_config(config=config,model_dir=cfg.paths.model_dir)
+    save_vocab(vocab=vocab,model_dir=cfg.paths.model_dir)
     
-    print(f"model artifacts are saved to {config['model_dir']}")
+    print(f"model artifacts are saved to {cfg.paths.model_dir}")
     
 if __name__=="__main__":
-    argparse=argparse.ArgumentParser()
-    argparse.add_argument("--config",type=str, required=True,help="path the config yaml file")
-    args=argparse.parse_args()
-    
-    with open(args.config,'r') as stream:
-        config=yaml.safe_load(stream)
-    train(config)
+    train()
