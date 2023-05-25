@@ -2,6 +2,7 @@ import os
 import torch
 import json
 import numpy as np
+from tqdm import tqdm
 
 class Trainer():
     def __init__(self,
@@ -54,7 +55,7 @@ class Trainer():
     def _train_epoch(self):
         self.model.train()
         running_loss=[]
-        for i,batch in enumerate(self.train_dataloader):
+        for i,batch in tqdm(enumerate(self.train_dataloader)):
             inputs=batch[0].to(self.device)
             labels=batch[1].to(self.device)
             
@@ -65,7 +66,7 @@ class Trainer():
             loss.backward()
             self.optimizer.step()
             
-            running_loss.append(loss)
+            running_loss.append(loss.item())
             
             if i==self.train_steps:
                 break
@@ -75,7 +76,7 @@ class Trainer():
         self.model.eval()
         running_loss=[]
         
-        with torch.no_grad:
+        with torch.no_grad():
             for i,batch in enumerate(self.val_dataloader):
                 inputs=batch[0].to(self.device)
                 labels=batch[1].to(self.device)
@@ -83,7 +84,7 @@ class Trainer():
                 outputs=self.model(inputs)
                 loss=self.criterion(outputs,labels)
                 
-                running_loss.append(loss)
+                running_loss.append(loss.item())
                 
                 if i==self.val_steps:
                     break
