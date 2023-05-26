@@ -3,11 +3,10 @@ import torch
 import torch.nn as nn
 from utils.helper import get_optim_class,get_lr_scheduler,save_config,save_vocab
 from utils.trainer import Trainer
-from utils.dataloader import get_dataloader
+from utils.dataloader import get_dataloader,CustomTextData
 import hydra
 from hydra.core.config_store import ConfigStore
 from config import WordToVec
-from utils.dataset_prep import CustomTextData
 from utils.models import SkipGramNegSampling,NegativeSamplingLoss
 from utils.helper import get_noise_dist
 cs= ConfigStore.instance()
@@ -18,10 +17,9 @@ def train(cfg:WordToVec):
     device="cuda" if torch.cuda.is_available() else "cpu"
     if not os.path.exists(cfg.paths.model_dir):
         os.makedirs(cfg.paths.model_dir)
-    custom_text_dataset=CustomTextData(cfg.paths.data_path,True,False)
-    train_dataloader=get_dataloader(custom_text_dataset,cfg.params.batch_size,True,5)
+    custom_text_dataset=CustomTextData(cfg.paths.data_path,True,False,2)
+    train_dataloader=get_dataloader(custom_text_dataset,cfg.params.batch_size,True)
     
-
     noise_dist=get_noise_dist(custom_text_dataset.int_words)
     
     model=SkipGramNegSampling(len(custom_text_dataset.int_to_vocab),cfg.params.embed_size,noise_dist,device)

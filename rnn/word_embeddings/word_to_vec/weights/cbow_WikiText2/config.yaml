@@ -1,13 +1,232 @@
-checkpoint_frequency: null
-data_dir: data/
-dataset: WikiText2
-epochs: 5
-learning_rate: 0.025
-model_dir: weights/cbow_WikiText2
-model_name: cbow
-optimizer: Adam
-shuffle: true
-train_batch_size: 64
-train_steps: 10
-val_batch_size: 64
-val_steps: 10
+&id004 !!python/object:omegaconf.dictconfig.DictConfig
+_content:
+  params: &id001 !!python/object:omegaconf.dictconfig.DictConfig
+    _content:
+      batch_size: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: batch_size
+          object_type: null
+          optional: true
+          ref_type: &id002 !!python/name:typing.Any ''
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - &id003 !!python/name:builtins.dict ''
+        _parent: *id001
+        _val: 8
+      checkpoint_frequency: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: checkpoint_frequency
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: 10
+      dataset: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: dataset
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: WikiText2
+      embed_size: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: embed_size
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: 300
+      epochs: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: epochs
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: 5
+      learning_rate: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: learning_rate
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: 0.025
+      model_name: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: model_name
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: cbow
+      n_neg_samples: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: n_neg_samples
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: 4
+      optimizer: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: optimizer
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: Adam
+      print_step: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: print_step
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: 1
+      shuffle: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: shuffle
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: true
+      train_steps: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: train_steps
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id001
+        _val: 10
+    _metadata: !!python/object:omegaconf.base.ContainerMetadata
+      element_type: *id002
+      flags: {}
+      flags_root: false
+      key: params
+      key_type: *id002
+      object_type: *id003
+      optional: true
+      ref_type: *id002
+      resolver_cache: !!python/object/apply:collections.defaultdict
+      - *id003
+    _parent: *id004
+  paths: &id005 !!python/object:omegaconf.dictconfig.DictConfig
+    _content:
+      data_dir: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: data_dir
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id005
+        _val: data/
+      data_path: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: data_path
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id005
+        _val: data/datasets/text8
+      model_dir: !!python/object:omegaconf.nodes.AnyNode
+        _metadata: !!python/object:omegaconf.base.Metadata
+          flags: {}
+          flags_root: false
+          key: model_dir
+          object_type: null
+          optional: true
+          ref_type: *id002
+          resolver_cache: !!python/object/apply:collections.defaultdict
+          - *id003
+        _parent: *id005
+        _val: weights/cbow_WikiText2
+    _metadata: !!python/object:omegaconf.base.ContainerMetadata
+      element_type: *id002
+      flags: {}
+      flags_root: false
+      key: paths
+      key_type: *id002
+      object_type: *id003
+      optional: true
+      ref_type: *id002
+      resolver_cache: !!python/object/apply:collections.defaultdict
+      - *id003
+    _parent: *id004
+_metadata: !!python/object:omegaconf.base.ContainerMetadata
+  element_type: *id002
+  flags:
+    struct: true
+  flags_root: false
+  key: null
+  key_type: *id002
+  object_type: *id003
+  optional: true
+  ref_type: *id002
+  resolver_cache: !!python/object/apply:collections.defaultdict
+    args:
+    - *id003
+    dictitems:
+      now:
+        ? !!python/tuple
+        - '%H-%M-%S'
+        : 16-28-19
+        ? !!python/tuple
+        - '%Y-%m-%d'
+        : '2023-05-26'
+_parent: null

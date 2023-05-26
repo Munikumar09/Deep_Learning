@@ -1,15 +1,15 @@
 params:
   model_name: cbow
   dataset: WikiText2
-  batch_size: 64
+  batch_size: 512
   shuffle: True
   optimizer: Adam
-  learning_rate: 0.025
+  learning_rate: 0.003
   epochs: 5
   train_steps: 
   embed_size: 300
   checkpoint_frequency: 10
-  n_neg_samples: 5
+  n_neg_samples: 4
   print_step: 1
 paths: 
   model_dir: weights/cbow_WikiText2

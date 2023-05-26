@@ -9,10 +9,11 @@ from collections import Counter
 def cosine_similarity(embeddings,n_valid_words=10,valid_window=100,device="cpu"):
     all_embeddings=embeddings.weight
     magnitudes=all_embeddings.pow(2).sum(1).sqrt().unsqueeze(0)
-    valid_words=random.sample(range(valid_window),n_valid_words//2)+random.sample(range(1000,1000+valid_window),n_valid_words//2)
-    valid_words=torch.LongTensor(np.array(valid_words)).to(device)
     
-    similarities=torch.mm(valid_words,all_embeddings.t())/magnitudes
+    valid_words=random.sample(range(valid_window),n_valid_words//2)+random.sample(range(1000,1000+valid_window),n_valid_words//2)
+    valid_words=torch.tensor(np.array(valid_words)).to(device)
+    valid_embeddings=embeddings(valid_words)
+    similarities=torch.mm(valid_embeddings,all_embeddings.t())/magnitudes
     return valid_words,similarities
 
 def get_noise_dist(int_words):

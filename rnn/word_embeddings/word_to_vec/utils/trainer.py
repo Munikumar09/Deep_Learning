@@ -43,8 +43,8 @@ class Trainer():
     def train(self):
         for epoch in range(self.epochs):
             self._train_epoch()
-            if (epoch+1 % self.print_every) == 0:
-                print("Epoch: {}/{}".format((epoch+1), self.n_epochs))
+            if self.print_step is not None:
+                print("Epoch: {}/{}".format((epoch+1), self.epochs))
                 print("Loss: {:.4f}".format(self.train_loss[-1]))
                 valid_idxs, similarities = cosine_similarity(self.model.target_embed)
                 _, closest_idxs = similarities.topk(6)
@@ -63,14 +63,16 @@ class Trainer():
         self.model.train()
         running_loss=[]
         for i,batch in tqdm(enumerate(self.train_dataloader)):
+            
             target_words=batch[0].to(self.device)
             context_words=batch[1].to(self.device)
+            target_words=target_words.reshape(-1)
+            context_words=context_words.reshape(-1)
+            
             self.optimizer.zero_grad()
             target_embeddings=self.model.forward_target(target_words)
             context_embeddings=self.model.forward_context(context_words)
-            noise_embeddings=self.model.forward_noise(self.batch_size,self.n_neg_samples)
-            
-            
+            noise_embeddings=self.model.forward_noise(target_words.shape[0],self.n_neg_samples)
             loss=self.criterion(target_embeddings,context_embeddings,noise_embeddings)
             loss.backward()
             self.optimizer.step()
@@ -80,7 +82,7 @@ class Trainer():
             if i==self.train_steps:
                 break
         epoch_loss=np.mean(running_loss)
-        self.loss["train"].append(epoch_loss)
+        self.train_loss.append(epoch_loss)
     
     def _save_checkpoint(self,epoch):
         epoch_num=epoch+1
@@ -98,5 +100,5 @@ class Trainer():
     def save_loss(self):
         loss_path=os.path.join(self.model_dir,"loss.json")
         with open(loss_path,"w") as fp:
-            json.dump(self.loss,fp)
+            json.dump(self.train_loss,fp)
                 

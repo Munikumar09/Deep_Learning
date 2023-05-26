@@ -29,7 +29,6 @@ class NegativeSamplingLoss(nn.Module):
         target_vector=target_vector.view(batch_size,embedding_size,1)
         context_vector=context_vector.view(batch_size,1,embedding_size)
         out_loss=torch.bmm(context_vector,target_vector).sigmoid().log().squeeze()
-        
         noise_loss=torch.bmm(noise_vector.neg(),target_vector).sigmoid().log()
         noise_loss=noise_loss.squeeze().sum(1)
         return -(out_loss+noise_loss).mean()
@@ -41,12 +40,8 @@ class SkipGramNegSampling(nn.Module):
         self.n_embed=n_embed
         self.noise_dist=noise_dist
         self.device=device
-        self.context_embed=nn.Embedding(n_vocab,n_embed)
-        self.target_embed=nn.Embedding(n_vocab,n_embed)
-        
-        self.context_embed.weight.data.uniform_(-1,1)
-        self.target_embed.weight.data.uniform_(-1,1)
-        
+        self.context_embed=nn.Embedding(n_vocab,n_embed,max_norm=1)
+        self.target_embed=nn.Embedding(n_vocab,n_embed,max_norm=1)
     def forward_context(self,contexts):
         embed_contexts=self.context_embed(contexts)
         return embed_contexts
@@ -56,14 +51,18 @@ class SkipGramNegSampling(nn.Module):
         return embed_target
     
     def forward_noise(self,batch_size,n_samples):
-        if self.noise_dist:
-            noise=self.noise_dist
-        else:
+        if self.noise_dist is None:
             noise=torch.ones(self.n_vocab)
+        else:
+            noise=self.noise_dist
         
         noise_words=torch.multinomial(noise,
-                                  num_samples=n_samples,
+                              num_samples=batch_size*n_samples,
                               replacement=True)
         noise_words.to(self.device)
-        noise_vector=self.target_embed(noise_words).view(batch_size,n_samples,self.n_embed)
+        
+        noise_vector=self.target_embed(noise_words)
+
+        noise_vector=noise_vector.view(batch_size,n_samples,self.n_embed)
+        
         return noise_vector
