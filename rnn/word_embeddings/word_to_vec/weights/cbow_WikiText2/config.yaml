@@ -13,7 +13,7 @@ _content:
           resolver_cache: !!python/object/apply:collections.defaultdict
           - &id003 !!python/name:builtins.dict ''
         _parent: *id001
-        _val: 8
+        _val: 512
       checkpoint_frequency: !!python/object:omegaconf.nodes.AnyNode
         _metadata: !!python/object:omegaconf.base.Metadata
           flags: {}
@@ -73,7 +73,7 @@ _content:
           resolver_cache: !!python/object/apply:collections.defaultdict
           - *id003
         _parent: *id001
-        _val: 0.025
+        _val: 0.003
       model_name: !!python/object:omegaconf.nodes.AnyNode
         _metadata: !!python/object:omegaconf.base.Metadata
           flags: {}
@@ -145,7 +145,7 @@ _content:
           resolver_cache: !!python/object/apply:collections.defaultdict
           - *id003
         _parent: *id001
-        _val: 10
+        _val: 20
     _metadata: !!python/object:omegaconf.base.ContainerMetadata
       element_type: *id002
       flags: {}
@@ -225,7 +225,7 @@ _metadata: !!python/object:omegaconf.base.ContainerMetadata
       now:
         ? !!python/tuple
         - '%H-%M-%S'
-        : 16-28-19
+        : 17-31-42
         ? !!python/tuple
         - '%Y-%m-%d'
         : '2023-05-26'

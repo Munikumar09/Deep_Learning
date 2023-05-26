@@ -8,10 +8,9 @@ from utils.helper import cosine_similarity
 class Trainer():
     def __init__(self,
                  model,
-                 dataset,
-                 batch_size,
+                 dataset_iter,
+                 int_to_vocab,
                  epochs,
-                 train_dataloader,
                  train_steps,
                  n_neg_samples,
                  checkpoint_frequency,
@@ -23,10 +22,9 @@ class Trainer():
                  print_step
          ) :
         self.model=model
-        self.dataset=dataset
-        self.batch_size=batch_size
+        self.dataset_iter=dataset_iter
+        self.int_to_vocab=int_to_vocab
         self.epochs=epochs
-        self.train_dataloader=train_dataloader
         self.train_steps=train_steps
         self.n_neg_samples=n_neg_samples
         self.checkpoint_frequency=checkpoint_frequency
@@ -51,8 +49,8 @@ class Trainer():
                 valid_idxs, closest_idxs = valid_idxs.to('cpu'), closest_idxs.to('cpu')
                 
                 for ii, v_idx in enumerate(valid_idxs):
-                    closest_words = [self.dataset.int_to_vocab[idx.item()] for idx in closest_idxs[ii]][1:]
-                    print(self.dataset.int_to_vocab[v_idx.item()] + " | "+ ", ".join(closest_words))
+                    closest_words = [self.int_to_vocab[idx.item()] for idx in closest_idxs[ii]][1:]
+                    print(self.int_to_vocab[v_idx.item()] + " | "+ ", ".join(closest_words))
                 print("\n...\n")
             self.lr_schedular.step()
             
@@ -62,12 +60,10 @@ class Trainer():
     def _train_epoch(self):
         self.model.train()
         running_loss=[]
-        for i,batch in tqdm(enumerate(self.train_dataloader)):
+        for i,batch in tqdm(enumerate(self.dataset_iter)):
             
-            target_words=batch[0].to(self.device)
-            context_words=batch[1].to(self.device)
-            target_words=target_words.reshape(-1)
-            context_words=context_words.reshape(-1)
+            target_words=torch.LongTensor(batch[0]).to(self.device)
+            context_words=torch.LongTensor(batch[1]).to(self.device)
             
             self.optimizer.zero_grad()
             target_embeddings=self.model.forward_target(target_words)

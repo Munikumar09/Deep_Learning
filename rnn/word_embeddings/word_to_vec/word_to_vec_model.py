@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from utils.helper import get_optim_class,get_lr_scheduler,save_config,save_vocab
 from utils.trainer import Trainer
-from utils.dataloader import get_dataloader,CustomTextData
+from utils.dataloader import get_data_iterator,load_data
 import hydra
 from hydra.core.config_store import ConfigStore
 from config import WordToVec
@@ -17,12 +17,12 @@ def train(cfg:WordToVec):
     device="cuda" if torch.cuda.is_available() else "cpu"
     if not os.path.exists(cfg.paths.model_dir):
         os.makedirs(cfg.paths.model_dir)
-    custom_text_dataset=CustomTextData(cfg.paths.data_path,True,False,2)
-    train_dataloader=get_dataloader(custom_text_dataset,cfg.params.batch_size,True)
+    train_data,vocab_to_int,int_to_vocab=load_data(cfg.paths.data_path,True)
+    dataset_iterator=get_data_iterator(train_data,cfg.params.batch_size,4)
     
-    noise_dist=get_noise_dist(custom_text_dataset.int_words)
+    noise_dist=get_noise_dist(train_data)
     
-    model=SkipGramNegSampling(len(custom_text_dataset.int_to_vocab),cfg.params.embed_size,noise_dist,device)
+    model=SkipGramNegSampling(len(int_to_vocab),cfg.params.embed_size,noise_dist,device)
     
     criterion=NegativeSamplingLoss()
     
@@ -33,10 +33,9 @@ def train(cfg:WordToVec):
     
     trainer=Trainer(
         model=model,
-        dataset=custom_text_dataset,
-        batch_size=cfg.params.batch_size,
+        dataset_iter=dataset_iterator,
+        int_to_vocab=int_to_vocab,
         epochs=cfg.params.epochs,
-        train_dataloader=train_dataloader,
         train_steps=cfg.params.train_steps,
         n_neg_samples=cfg.params.n_neg_samples,
         checkpoint_frequency=cfg.params.checkpoint_frequency,
@@ -54,7 +53,7 @@ def train(cfg:WordToVec):
     trainer.save_model()
     trainer.save_loss()
     save_config(config=cfg,model_dir=cfg.paths.model_dir)
-    save_vocab(vocab=custom_text_dataset.vocab_to_int,model_dir=cfg.paths.model_dir)
+    save_vocab(vocab=vocab_to_int,model_dir=cfg.paths.model_dir)
     print(f"model artifacts are saved to {cfg.paths.model_dir}")
     
 if __name__=="__main__":
