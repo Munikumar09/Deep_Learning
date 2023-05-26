@@ -3,66 +3,75 @@ import torch
 import json
 import numpy as np
 from tqdm import tqdm
+from utils.helper import cosine_similarity
 
 class Trainer():
     def __init__(self,
                  model,
+                 dataset,
+                 batch_size,
                  epochs,
                  train_dataloader,
                  train_steps,
-                 val_dataloader,
-                 val_steps,
+                 n_neg_samples,
                  checkpoint_frequency,
                  criterion,
                  optimizer,
                  lr_schedular,
                  device,
                  model_dir,
-                #  model_name 
+                 print_step
          ) :
         self.model=model
+        self.dataset=dataset
+        self.batch_size=batch_size
         self.epochs=epochs
         self.train_dataloader=train_dataloader
         self.train_steps=train_steps
-        self.val_dataloader=val_dataloader
-        self.val_steps=val_steps
+        self.n_neg_samples=n_neg_samples
         self.checkpoint_frequency=checkpoint_frequency
         self.criterion=criterion
         self.optimizer=optimizer
         self.lr_schedular=lr_schedular
         self.device=device
         self.model_dir=model_dir
-        # self.model_name=model_name
-        
-        self.loss={"train":[],"val":[]}
+        self.print_step=print_step
+        self.train_loss=[]
         self.model.to(self.device)
         
     
     def train(self):
         for epoch in range(self.epochs):
             self._train_epoch()
-            self._validation_epoch()
-            print(
-                f"{epoch+1} / {self.epochs} ====> \
-            train loss : {self.loss['train'][-1]}\
-            validation loss: {self.loss['val'][-1]}"
-            )
+            if (epoch+1 % self.print_every) == 0:
+                print("Epoch: {}/{}".format((epoch+1), self.n_epochs))
+                print("Loss: {:.4f}".format(self.train_loss[-1]))
+                valid_idxs, similarities = cosine_similarity(self.model.target_embed)
+                _, closest_idxs = similarities.topk(6)
+                valid_idxs, closest_idxs = valid_idxs.to('cpu'), closest_idxs.to('cpu')
+                
+                for ii, v_idx in enumerate(valid_idxs):
+                    closest_words = [self.dataset.int_to_vocab[idx.item()] for idx in closest_idxs[ii]][1:]
+                    print(self.dataset.int_to_vocab[v_idx.item()] + " | "+ ", ".join(closest_words))
+                print("\n...\n")
             self.lr_schedular.step()
             
             if self.checkpoint_frequency:
                 self._save_checkpoint(epoch)
-    
+            
     def _train_epoch(self):
         self.model.train()
         running_loss=[]
         for i,batch in tqdm(enumerate(self.train_dataloader)):
-            inputs=batch[0].to(self.device)
-            labels=batch[1].to(self.device)
-            
+            target_words=batch[0].to(self.device)
+            context_words=batch[1].to(self.device)
             self.optimizer.zero_grad()
+            target_embeddings=self.model.forward_target(target_words)
+            context_embeddings=self.model.forward_context(context_words)
+            noise_embeddings=self.model.forward_noise(self.batch_size,self.n_neg_samples)
             
-            outputs=self.model(inputs)
-            loss=self.criterion(outputs,labels)
+            
+            loss=self.criterion(target_embeddings,context_embeddings,noise_embeddings)
             loss.backward()
             self.optimizer.step()
             
@@ -72,25 +81,6 @@ class Trainer():
                 break
         epoch_loss=np.mean(running_loss)
         self.loss["train"].append(epoch_loss)
-    def _validation_epoch(self):
-        self.model.eval()
-        running_loss=[]
-        
-        with torch.no_grad():
-            for i,batch in enumerate(self.val_dataloader):
-                inputs=batch[0].to(self.device)
-                labels=batch[1].to(self.device)
-                
-                outputs=self.model(inputs)
-                loss=self.criterion(outputs,labels)
-                
-                running_loss.append(loss.item())
-                
-                if i==self.val_steps:
-                    break
-        epoch_loss=np.mean(running_loss)
-        self.loss["val"].append(epoch_loss)
-    
     
     def _save_checkpoint(self,epoch):
         epoch_num=epoch+1

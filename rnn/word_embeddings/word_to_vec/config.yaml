@@ -1,16 +1,17 @@
-model_name: cbow
-
-dataset: WikiText2
-data_dir: data/
-train_batch_size: 64
-val_batch_size: 64
-shuffle: True
-
-optimizer: Adam
-learning_rate: 0.025
-epochs: 5
-train_steps: 
-val_steps: 
-
-checkpoint_frequency: 
-model_dir: weights/cbow_WikiText2
+params:
+  model_name: cbow
+  dataset: WikiText2
+  batch_size: 64
+  shuffle: True
+  optimizer: Adam
+  learning_rate: 0.025
+  epochs: 5
+  train_steps: 
+  embed_size: 300
+  checkpoint_frequency: 10
+  n_neg_samples: 5
+  print_step: 1
+paths: 
+  model_dir: weights/cbow_WikiText2
+  data_dir: data/
+  data_path: data/datasets/text8
