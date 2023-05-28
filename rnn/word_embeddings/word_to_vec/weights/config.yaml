@@ -1,13 +1,13 @@
 params:
-  batch_size: 512
+  batch_size: 1024
   shuffle: true
   optimizer: Adam
   learning_rate: 0.003
-  epochs: 5
-  train_steps: 10
+  epochs: 100
+  train_steps: null
   embed_size: 300
   checkpoint_frequency: 10
-  n_neg_samples: 4
+  n_neg_samples: 5
   print_step: 1
   max_window_size: 4
 paths:
