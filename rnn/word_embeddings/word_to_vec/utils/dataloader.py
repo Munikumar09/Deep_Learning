@@ -71,8 +71,7 @@ def sub_sampling(int_words:List[int], threshold:float=1e-5)->List[int]:
     p_drop = {
         word: 1 - np.sqrt(threshold / word_freq_ratios[word]) for word in word_counts
     }
-    rand_prob = random.random()
-    sub_sampled_tokens= [word for word in int_words if rand_prob > p_drop[word]]
+    sub_sampled_tokens= [word for word in int_words if random.random() > p_drop[word]]
     return sub_sampled_tokens
 
 def load_data(data_path:str,subsample:bool):

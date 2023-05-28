@@ -157,7 +157,7 @@ class Trainer():
         """
         epoch_num=epoch+1
         if epoch_num%self.epochs==0:
-            model_path=f"checkpoint_{str(epoch).zfill(3)}"
+            model_path=f"checkpoints/checkpoint_{str(epoch).zfill(3)}"
             model_path=os.path.join(self.model_dir,model_path)
             torch.save(self.model,model_path)
     

@@ -125,4 +125,4 @@ def save_config(config:dict,model_dir:str):
     """
     file_path=os.path.join(model_dir,"config.yaml")
     with open(file_path,"w") as stream:
-        yaml.dump(config,stream)
+        OmegaConf.save(config, stream)

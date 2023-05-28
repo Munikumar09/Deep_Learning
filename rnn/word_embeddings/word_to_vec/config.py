@@ -18,6 +18,7 @@ class Params:
 
 @dataclass
 class Paths:
+    model_dir:str
     data_dir:str
     data_path:str
 @dataclass
