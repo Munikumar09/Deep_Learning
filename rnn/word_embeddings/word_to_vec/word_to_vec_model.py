@@ -17,13 +17,10 @@ cs.store(name="word_to_vec", node=WordToVec)
 
 @hydra.main(config_path=".",config_name="config.yaml",version_base=None)
 def train(cfg:WordToVec):
-    with open("conff.yaml",'w')as stream:
-        OmegaConf.save(cfg,stream)
-    return
     device="cuda" if torch.cuda.is_available() else "cpu"
     if not os.path.exists(cfg.paths.model_dir):
         os.makedirs(cfg.paths.model_dir)
-    train_data,vocab_to_int,int_to_vocab=load_data(cfg.paths.data_path,True)
+    train_data,_,int_to_vocab=load_data(cfg.paths.data_path,True)
     noise_dist=get_noise_dist(train_data)
     
     model=SkipGramNegSampling(len(int_to_vocab),cfg.params.embed_size,noise_dist,device)

@@ -67,7 +67,7 @@ def get_noise_dist(int_words:List[int])->Tensor:
     return noise_dist
     
     
-def get_optim_class(optimizer_name:str)->optim.SGD|optim.Adam:
+def get_optim_class(optimizer_name:str)->optim.SGD or optim.Adam:
     """
     Get the optimizer class from the optimizer name
 
@@ -89,7 +89,7 @@ def get_optim_class(optimizer_name:str)->optim.SGD|optim.Adam:
     else:
         raise ValueError("Select optimizer from : sgd, adam")
 
-def get_lr_scheduler(optimizer:optim.Adam|optim.SGD,total_epochs:int,verbose:bool=True):
+def get_lr_scheduler(optimizer:optim.Adam or optim.SGD,total_epochs:int,verbose:bool=True):
     """
     Adjust the learning rate of optimizer for the total number of epochs.
 
