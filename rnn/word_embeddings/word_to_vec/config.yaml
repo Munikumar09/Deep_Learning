@@ -6,12 +6,12 @@ params:
   optimizer: Adam
   learning_rate: 0.003
   epochs: 5
-  train_steps: 
+  train_steps: 10
   embed_size: 300
   checkpoint_frequency: 10
   n_neg_samples: 4
   print_step: 1
+  max_window_size: 4
 paths: 
-  model_dir: weights/cbow_WikiText2
   data_dir: data/
   data_path: data/datasets/text8

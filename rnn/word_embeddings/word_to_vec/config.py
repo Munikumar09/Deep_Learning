@@ -14,10 +14,10 @@ class Params:
     checkpoint_frequency:int
     n_neg_samples:int
     print_step:int
+    max_window_size:int
 
 @dataclass
 class Paths:
-    model_dir:str
     data_dir:str
     data_path:str
 @dataclass

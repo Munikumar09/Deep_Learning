@@ -1,28 +1,21 @@
 import torch.nn as nn
-from utils.constants import EMBED_DIMENSION, EMBED_MAX_NORM
-from torchsummary import summary
-import torch
+import torch    
+from torch import Tensor
 
-class CBOWModel(nn.Module):
-    def __init__(self, vocab_size: int):
-        super(CBOWModel, self).__init__()
-        self.embedding = nn.Embedding(
-            vocab_size, 
-            EMBED_DIMENSION, 
-            max_norm=EMBED_MAX_NORM
-        )
-        self.linear=nn.Linear(in_features=EMBED_DIMENSION,out_features=vocab_size)
-    def forward(self,inputs):
-        outputs=self.embedding(inputs)
-        outputs=outputs.mean(axis=1)
-        outputs=self.linear(outputs)
-        return outputs
-    
 class NegativeSamplingLoss(nn.Module):
+    """
+    Calculate the negative sampling loss to optimize the model
+    loss= -Mean(sigmoid(log(e_wc.e_wt))+sum(sigmoid(log(-e_wn.e_w1))))
+    
+    e_wc=context_embeddings
+    e_wt=target_embeddings
+    e_wn=noise_embeddings
+    
+    """
     def __init__(self):
         super(NegativeSamplingLoss, self).__init__()
     def forward(self,
-            target_vector,
+            target_vector:Tensor,
             context_vector,
             noise_vector):
         batch_size,embedding_size=target_vector.shape
@@ -56,10 +49,11 @@ class SkipGramNegSampling(nn.Module):
         else:
             noise=self.noise_dist
         
+        #selecting the n negative samples from noise distribution
         noise_words=torch.multinomial(noise,
                               num_samples=batch_size*n_samples,
                               replacement=True)
-        noise_words.to(self.device)
+        noise_words=noise_words.to(self.device)
         
         noise_vector=self.target_embed(noise_words)
 
