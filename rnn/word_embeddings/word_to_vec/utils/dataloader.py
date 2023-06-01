@@ -1,98 +1,103 @@
-import torch
-from torchtext.data.utils import get_tokenizer
-from torchtext.data import to_map_style_dataset
-from torchtext.datasets import WikiText103,WikiText2
-from torchtext.vocab import build_vocab_from_iterator
-from torch.utils.data import DataLoader
-from functools import partial
-
-from utils.constants import (
-MAX_SEQUENCE_LENGTH,
-MIN_WORD_FREQUENCY,
-CBOW_N_WORDS,
-SKIPGRAM_N_WORDS)
+import random
+from collections import Counter
+import numpy as np
+from typing import List, Tuple
 
 
-def get_english_tokenizer():
-    tokenizer=get_tokenizer(tokenizer="spacy",language="en_core_web_sm")
-    return tokenizer
+def preprocess_data(text: str) -> List[str]:
+    """
+    process the raw clean text data and return list of tokens
 
-def get_data_iterator(dataset_name,data_dir,split_type):
-    if dataset_name.lower()=="wikitext2":
-        data_iterator=WikiText2(root=data_dir,split=(split_type))
-    elif dataset_name.lower()=="wikitext103":
-        data_iterator=WikiText103(root=data_dir,split=(split_type))
-    else:
-        raise ValueError("choose dataset from : WikiText2,WikiText103")
-    data_iterator=to_map_style_dataset(data_iterator)
-    return data_iterator
+    Parameters
+    ----------
+        text: ``str``
+            text data to process
 
-def build_vocab(tokenizer,data_iterator):
-    vocab=build_vocab_from_iterator(
-        map(tokenizer,data_iterator),
-        min_freq=MIN_WORD_FREQUENCY,
-        specials=["<unk>"]
-    )
-    vocab.set_default_index(vocab['<unk>'])
-    return vocab
+    Returns
+    -------
+        filtered_words: ``List[str]``
+            list of processed tokens
+    """
+    text = text.lower()
+    words = text.split()
+    word_counts = Counter(words)
+    filtered_words = [word for word in words if word_counts[word] > 10]
+    return filtered_words
 
-def collate_cbow(batch,text_pipeline):
-    batch_input=[]
-    batch_output=[]
-    for text in batch:
-        token_ids=text_pipeline(text)
-        if len(token_ids)< CBOW_N_WORDS*2+1:
-            continue
-        if len(token_ids)>MAX_SEQUENCE_LENGTH:
-            token_ids=token_ids[:MAX_SEQUENCE_LENGTH]
-        for token_id in range(len(token_ids)-CBOW_N_WORDS*2):
-           token_id_sequence=token_ids[token_id:token_id+CBOW_N_WORDS*2+1]
-           output_token_id=token_id_sequence[CBOW_N_WORDS]
-           input_token_ids=token_id_sequence
-           batch_input.append(input_token_ids)
-           batch_output.append(output_token_id)
-    batch_input=torch.tensor(batch_input,dtype=torch.long)
-    batch_output=torch.tensor(batch_output,dtype=torch.long)
-    return batch_input,batch_output
-def collate_skip(batch,text_pipeline):
-    batch_input=[]
-    batch_output=[]
-    for text in batch:
-        token_ids=text_pipeline(text)
-        if len(token_ids)<SKIPGRAM_N_WORDS*2+1:
-            continue
-        if len(token_ids)>MAX_SEQUENCE_LENGTH:
-            token_ids=token_ids[:MAX_SEQUENCE_LENGTH]
-        for token_id in range(len(token_ids)-SKIPGRAM_N_WORDS*2):
-            token_id_sequence=token_ids[token_id:token_id+SKIPGRAM_N_WORDS*2+1]
-            input_token_id=token_id_sequence.pop(SKIPGRAM_N_WORDS)
-            output_token_ids=token_id_sequence
-            for output_token_id in output_token_ids:
-                batch_input.append(input_token_id)
-                batch_output.append(output_token_id)
-    batch_input=torch.tensor(batch_input,dtype=torch.int32)
-    batch_output=torch.tensor(batch_output,dtype=torch.int32)
-    return batch_input,batch_output
 
-def get_dataloader_and_vocab(model_name,dataset_name,split_type,data_dir,batch_size,shuffle,vocab=None):
-    data_iter=get_data_iterator(dataset_name,data_dir,split_type)
-    tokenizer=get_english_tokenizer()
-    
-    if not vocab:
-        vocab=build_vocab(tokenizer,data_iter)
-    
-    text_pipeline=lambda x: vocab(tokenizer(x))
-    if model_name=="cbow":
-        collate_fn=collate_cbow
-    elif model_name=="skipgram":
-        collate_fn=collate_skip
-    else:
-        raise ValueError("select model from : cbow and skipgram")
-    dataloader=DataLoader(
-        data_iter,
-        batch_size,
-       shuffle,
-       collate_fn=partial(collate_fn,text_pipeline=text_pipeline)
-    )
-    
-    return dataloader, vocab
+def build_vocab(words: List[str]) -> Tuple[dict[str, int], dict[int, str]]:
+    """
+    Takes the input tokens and build the vocabulary from the tokens
+
+    Parameters
+    ----------
+        words: ``List[str]``
+            List of tokens to build the vocabulary
+
+    Returns
+    -------
+        vocab_to_int,int_to_vocab: ``Tuple[dict[str,int],dict[int,str]]``
+            vocab_to_int is a dictionary of vocab to int
+            int_to_vocab is a dictionary of int_word to vocab
+    """
+    word_counts = Counter(words)
+    sorted_vocab = sorted(word_counts, key=word_counts.get, reverse=True)
+    vocab_to_int = {word: idx for idx, word in enumerate(sorted_vocab)}
+    int_to_vocab = {idx: word for word, idx in vocab_to_int.items()}
+    return vocab_to_int, int_to_vocab
+
+
+def sub_sampling(int_words:List[int], threshold:float=1e-5)->List[int]:
+    """ 
+    It reduces the input tokes by eliminating the more frequent (stop words) like 'the','for' 
+    because they won't provide any context by
+        1-sqrt(threshold/freq_ratio(word)).
+
+    Parameters
+    ----------
+        int_words: ``List[int]``
+            list of integer representation of tokens
+        threshold: ``float`` ( default = 1e-5 )
+            threshold value to filter the tokens
+
+    Returns
+    -------
+        sub_sampled_tokens: ``List[int]`` 
+            list of int_words after sub sampling
+    """
+    word_counts = Counter(int_words)
+    total_words = len(int_words)
+    word_freq_ratios = {word: freq / total_words for word, freq in word_counts.items()}
+    p_drop = {
+        word: 1 - np.sqrt(threshold / word_freq_ratios[word]) for word in word_counts
+    }
+    sub_sampled_tokens= [word for word in int_words if random.random() > p_drop[word]]
+    return sub_sampled_tokens
+
+def load_data(data_path:str,subsample:bool):
+    """
+    It process data text data by converting to integer words and builds the vocabulary.
+
+    Parameters
+    ----------
+        data_path: ``str``
+            path to the data file
+        subsample: ``bool``
+            whether to subsample the data or not
+
+    Returns
+    -------
+        int_words: ``List[int]``
+            list of integer representation of tokens
+        vocab_to_int,int_to_vocab: ``Tuple[dict[str,int],dict[int,str]]``
+            vocab_to_int is a dictionary of vocab to int
+            int_to_vocab is a dictionary of int_word to vocab
+    """
+    with open(data_path,'r') as fp:
+        data=fp.read()
+    data=preprocess_data(data)
+    if subsample:
+        data=sub_sampling(data)
+    vocab_to_int,int_to_vocab=build_vocab(data)
+    int_words=[vocab_to_int[word] for word in data]
+    return int_words,vocab_to_int,int_to_vocab

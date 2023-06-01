@@ -4,20 +4,23 @@ from dataclasses import dataclass
 class Params:
     model_name:str
     dataset:str
-    train_batch_size:int
-    val_batch_size:int
+    batch_size:int
     shuffle:bool
     optimizer:str
     learning_rate:float
     epochs:int
     train_steps:int
-    val_steps:int
+    embed_size:int
     checkpoint_frequency:int
+    n_neg_samples:int
+    print_step:int
+    max_window_size:int
 
 @dataclass
 class Paths:
     model_dir:str
     data_dir:str
+    data_path:str
 @dataclass
 class WordToVec:
     params:Params

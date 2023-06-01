@@ -1,3 +1,6 @@
 /data
 /utils/__pycache__
 /outputs
+/__pycache__
+/weights/checkpoints
+/weights/model.pt
