@@ -20,15 +20,16 @@ def get_positional_embeddings(input_shape):
 
 
 class InputEncoding(nn.Module):
-    def __init__(self, embed_size, vocab_size) -> None:
+    def __init__(self, embed_size, vocab_size,device) -> None:
         super().__init__()
     
         self.embed = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embed_size)
-
+        self.device=device
     def forward(self, inputs):
         # inputs=seq_len,batch_size
         input_embeddings = self.embed(inputs)
         # input_embeddings=[seq_len,batch_size,embed_size]
         positional_embeddings = get_positional_embeddings(input_embeddings.shape)
+        positional_embeddings=positional_embeddings.to(self.device)
         positional_encodings = input_embeddings + positional_embeddings
         return positional_encodings

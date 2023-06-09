@@ -3,6 +3,7 @@ from tqdm import tqdm
 import os
 from torchtext.data.metrics import bleu_score
 import json
+from torch.utils.tensorboard import SummaryWriter
 
 class Trainer:
     def __init__(
@@ -30,12 +31,13 @@ class Trainer:
         self.loss={"train":[],'val':[]}
         self.bleu={"train":[],'val':[]}
         self.model=model.to(device)
-        
+        self.writer=SummaryWriter()
     def train(self, train_loader, val_loader, save_path):
-        for epoch in tqdm(range(self.num_epochs)):
+        for epoch in range(self.num_epochs):
             self._train_epoch(train_loader)
             self._val_epoch(val_loader)
             if self.print_stats:
+                print(f"########## epoch {epoch} ##########")
                 print(f"train loss : {self.loss['train'][-1]}\t val loss: {self.loss['val'][-1]}")
                 print(f"train bleu score : {self.bleu['train'][-1]} \t val bleu score : {self.bleu['val'][-1]}")
                 test_txt="In this story an old man sets out to ask an Indian king to dig some well in his village when their water runs dry"
@@ -45,6 +47,10 @@ class Trainer:
                 print(f"predicted trainslation : {predicted_translation[0]}")
                 print(f"bleu_score : {bleu_score([predicted_translation[0].split()],[[expected_translation.split()]],max_n=2,weights=[0.5,0.5])}")
                 print("\n-----------------------------------\n")
+            self.writer.add_scalar("train loss",scalar_value=self.loss['train'][-1],global_step=epoch)
+            self.writer.add_scalar("train bleu",scalar_value=self.loss['train'][-1],global_step=epoch)
+            self.writer.add_scalar("val loss",scalar_value=self.loss['val'][-1],global_step=epoch)
+            self.writer.add_scalar("val bleu",scalar_value=self.bleu['val'][-1],global_step=epoch)
         self.save_model(os.path.join(save_path,"model.pt"))
         self.save_loss(os.path.join(save_path,"loss.json"))
         self.save_bleu(os.path.join(save_path,"bleu.json"))
@@ -52,27 +58,41 @@ class Trainer:
         i=0
         epoch_loss=0
         epoch_bleu=0
-        for batch_src,batch_tgt in train_loader:
+        for batch_src,batch_tgt in tqdm(train_loader):
             i+=1
+            #moving the src batch and target batch into cuda
             source=batch_src.to(self.device)
             target=batch_tgt.to(self.device)
+            #calling the model with inputs
             outputs=self.model(source,target)
+            
+            #predicted tokens [seq_len, batch_size]
             preds=outputs.argmax(-1)
+            
+            #reshaping from [seq_len,batch_size,vocab_size] to [seq_len*batch_size,vocab_size]
+            #ignore the first seq because it is the start sentence
             outputs=outputs[1:].reshape(-1,outputs.shape[-1])
-            batch_tgt=batch_tgt[1:].reshape(-1)
-            loss=self.criterion(outputs,batch_tgt)
-            epoch_loss+=loss.item()
+            
+            #reshaping from [seq_len,batch_size] to [seq_len*batch_size]
+            target_reshape=target[1:].reshape(-1)
+            
+            
+            loss=self.criterion(outputs,target_reshape)
+            epoch_loss+=loss.detach().item()
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-            pred_tokens=[self.tgt_vocab.lookup_tokens(tokens) for tokens in preds[1:].t().tolist()]
-            target_tokens=[[self.tgt_vocab.lookup_tokens(tokens)] for tokens in target.t().tolist()]
+            
+            # converting the indices to the str tokens to calculate bleu score
+            preds=preds.detach()[1:].t().tolist()
+            target=target.detach()[1:].t().tolist()
+            pred_tokens=[self.tgt_vocab.lookup_tokens(tokens) for tokens in preds]
+            target_tokens=[[self.tgt_vocab.lookup_tokens(tokens)] for tokens in target]
             bleu=bleu_score(pred_tokens,target_tokens,max_n=2,weights=[0.5,0.5])
             epoch_bleu+=bleu
-            if i>=2:
-                break
-        self.loss['train'].append(epoch_loss/i)
-        self.bleu['train'].append(epoch_bleu/i)
+            
+        self.loss['train'].append(epoch_loss/len(train_loader))
+        self.bleu['train'].append(epoch_bleu/len(train_loader))
                 
             
     def _val_epoch(self,val_loader):
@@ -80,24 +100,26 @@ class Trainer:
         epoch_bleu=0
         epoch_loss=0
         with torch.no_grad():
-            for batch_src,batch_tgt in val_loader:
+            for source,target in tqdm(val_loader):
                 i+=1
-                source=batch_src.to(self.device)
-                target=batch_tgt.to(self.device)
+                source=source.to(self.device)
+                target=target.to(self.device)
                 outputs=self.model(source,target)
                 preds=outputs.argmax(-1)
                 outputs=outputs[1:].reshape(-1,outputs.shape[-1])
-                batch_tgt=batch_tgt[1:].reshape(-1)
-                loss=self.criterion(outputs,batch_tgt)
-                pred_tokens=[self.tgt_vocab.lookup_tokens(tokens) for tokens in preds[1:].t().tolist()]
-                target_tokens=[[self.tgt_vocab.lookup_tokens(tokens)] for tokens in target.t().tolist()]
+                target_reshape=target[1:].reshape(-1)
+                loss=self.criterion(outputs,target_reshape)
+                
+                preds=preds.detach()[1:].t().tolist()
+                target=target.detach()[1:].t().tolist()
+                pred_tokens=[self.tgt_vocab.lookup_tokens(tokens) for tokens in preds]
+                target_tokens=[[self.tgt_vocab.lookup_tokens(tokens)] for tokens in target]
                 bleu=bleu_score(pred_tokens,target_tokens,max_n=2,weights=[0.5,0.5])
                 epoch_bleu+=bleu
-                epoch_loss+=loss.item()
-                if i>=2:
-                    break
-        self.loss['val'].append(epoch_loss/i)
-        self.bleu['val'].append(epoch_bleu/i)
+                epoch_loss+=loss.detach().item()
+                
+        self.loss['val'].append(epoch_loss/len(val_loader))
+        self.bleu['val'].append(epoch_bleu/len(val_loader))
     def save_model(self,save_path):
         torch.save(self.model,save_path)
     def save_loss(self,save_path):

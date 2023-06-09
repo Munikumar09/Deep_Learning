@@ -11,9 +11,9 @@ import torch.nn as nn
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # hyperparamers
-num_epochs=2
+num_epochs=10
 learning_rate=0.001
-batch_size = 512
+batch_size = 256
 encoder_embedding_size = 512
 decoder_embedding_size = 512
 hidden_size = 1024
@@ -25,6 +25,7 @@ teacher_forcing_ratio = 0.5
 num_heads = 8
 forward_expansion = 4
 num_encoders = 6
+num_workers=4
 
 
 raw_train_data, raw_val_data = load_data(data_path="fra.txt", train_percent=0.8)
@@ -37,6 +38,7 @@ val_data, _, _ = data_process_pipeline(
 train_loader = DataLoader(
     train_data,
     batch_size=batch_size,
+    num_workers=num_workers,
     collate_fn=partial(
         collate_fn, src_pad_val=eng_vocab["<pad>"], tgt_pad_val=fra_vocab["<pad>"]
     ),
@@ -44,6 +46,7 @@ train_loader = DataLoader(
 val_loader = DataLoader(
     val_data,
     batch_size=batch_size,
+    num_workers=num_workers,
     collate_fn=partial(
         collate_fn, src_pad_val=eng_vocab["<pad>"], tgt_pad_val=fra_vocab["<pad>"]
     ),
@@ -60,6 +63,7 @@ encoder = Encoder(
     forward_expansion=forward_expansion,
     num_encoders=num_encoders,
     vocab_size=len(eng_vocab),
+    device=device
 )
 
 decoder = Decoder(
@@ -69,6 +73,7 @@ decoder = Decoder(
     num_decoders=num_encoders,
     output_size=len(fra_vocab),
     vocab_size=len(fra_vocab),
+    device=device
 )
 transformer = Transformer(
     encoder=encoder,

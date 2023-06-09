@@ -10,18 +10,17 @@ class MultiHeadAttention(nn.Module):
         self.head_len=embed_size//num_heads
         if self.head_len*num_heads != embed_size:
             raise ValueError("Embedding size must be divisible by heads")
-        self.queries=nn.Linear(embed_size,embed_size)
-        self.keys=nn.Linear(embed_size,embed_size)
-        self.values=nn.Linear(embed_size,embed_size)
+        self.query=nn.Linear(embed_size,embed_size)
+        self.key=nn.Linear(embed_size,embed_size)
+        self.value=nn.Linear(embed_size,embed_size)
     def forward(self,queries,keys,values,mask=None,dec=False):
-        
-        queries=self.queries(queries)
+        queries=self.query(queries)
         #shape=[seq_len,batch_size,embed_size]
         
-        keys=self.keys(keys)
+        keys=self.key(keys)
         #shape=[seq_len,batch_size,embed_size]
         
-        values=self.values(values)
+        values=self.value(values)
         #shape=[seq_len,batch_size,embed_size]
         _,n_q,_=queries.shape
         queries=queries.reshape(n_q,-1,self.num_heads,self.head_len)
