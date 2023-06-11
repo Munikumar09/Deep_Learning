@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset
 from data.helper import build_vocab, preprocess, separate_src_tgt, train_test_split
-
+from typing import List,Tuple
+from torchtext.vocab import Vocab
 
 class CustomDataset(Dataset):
     def __init__(self, dataset) -> None:
@@ -15,7 +16,7 @@ class CustomDataset(Dataset):
         return self.src_data[index], self.tgt_data[index]
 
 
-def data_process_pipeline(data, eng_vocab=None, fra_vocab=None):
+def data_process_pipeline(data:List[str], eng_vocab:Vocab=None, fra_vocab:Vocab=None)->Tuple[CustomDataset,Vocab,Vocab]:
     src, tgt = separate_src_tgt(data)
     if eng_vocab is None:
         eng_vocab = build_vocab(src)
@@ -26,7 +27,7 @@ def data_process_pipeline(data, eng_vocab=None, fra_vocab=None):
     return train_dataset, eng_vocab, fra_vocab
 
 
-def load_data(data_path, train_percent):
+def load_data(data_path:str, train_percent:float)->Tuple[List[str],List[str]]:
     with open(data_path, "r", encoding="utf-8") as fp:
         data = fp.read()
     clean_data = preprocess(data)

@@ -1,9 +1,9 @@
 import torch
-import numpy as np
+from torch import Tensor
 import torch.nn as nn
 
 
-def get_positional_embeddings(input_shape,device):
+def get_positional_embeddings(input_shape:tuple,device:str)->Tensor:
     batch_size, seq_len, embed_size = input_shape
     pos=torch.arange(seq_len).reshape(seq_len,1).to(device)
     i=torch.arange(embed_size).to(device)
@@ -14,16 +14,17 @@ def get_positional_embeddings(input_shape,device):
 
 
 class InputEncoding(nn.Module):
-    def __init__(self, embed_size, vocab_size,device) -> None:
+    def __init__(self, embed_size:int, vocab_size:int,device:str) -> None:
         super().__init__()
     
         self.embed = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embed_size)
         self.device=device
-    def forward(self, inputs):
-        # inputs=seq_len,batch_size
-        input_embeddings = self.embed(inputs)
-        # input_embeddings=[seq_len,batch_size,embed_size]
-        positional_embeddings = get_positional_embeddings(input_embeddings.shape,self.device)
+    def forward(self, inputs:Tensor)->Tensor:
         
+        # inputs=seq_len,batch_size
+        # input_embeddings=[seq_len,batch_size,embed_size]
+        input_embeddings = self.embed(inputs)
+        positional_embeddings = get_positional_embeddings(input_embeddings.shape,self.device)
         positional_encodings = input_embeddings + positional_embeddings
+        
         return positional_encodings
